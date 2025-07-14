@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fuel Tracker v2</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+    input, select { width: 100%; padding: 8px; margin-top: 5px; }
+    button { padding: 10px 20px; margin-top: 10px; }
+    .summary { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Fuel Tracker v2</h2>
+  <label>Date: <input type="date" id="date"></label><br>
+  <label>From: <input list="fromList" id="from">
+    <datalist id="fromList">
+      <option value="ADD"><option value="ANUSAM"><option value="AADHILAKSHMI">
+      <option value="ELL EM EXPORTS"><option value="NEWLOOK"><option value="HH VENTURES">
+    </datalist>
+  </label><br>
+  <label>To: <input list="toList" id="to">
+    <datalist id="toList">
+      <option value="ADD"><option value="ANUSAM"><option value="AADHILAKSHMI">
+      <option value="ELL EM EXPORTS"><option value="NEWLOOK"><option value="HH VENTURES">
+    </datalist>
+  </label><br>
+  <label>KM: <input type="number" id="km"></label><br>
+  <label>Rate (₹/KM): <input type="number" id="rate" value="3"></label><br>
+  <button onclick="addEntry()">Add Entry</button>
+
+  <table id="data-table">
+    <thead>
+      <tr><th>Date</th><th>From</th><th>To</th><th>KM</th><th>Rate</th><th>Cost</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="summary">
+    Total KM: <span id="total-km">0</span> | Total Cost: ₹<span id="total-cost">0</span>
+  </div>
+  <button onclick="downloadPDF()">Generate PDF</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <script>
+    let entries = [];
+
+    function addEntry() {
+      const date = document.getElementById("date").value;
+      const from = document.getElementById("from").value;
+      const to = document.getElementById("to").value;
+      const km = parseFloat(document.getElementById("km").value);
+      const rate = parseFloat(document.getElementById("rate").value);
+      const cost = km * rate;
+
+      entries.push({ date, from, to, km, rate, cost });
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector("#data-table tbody");
+      tbody.innerHTML = "";
+      let totalKM = 0, totalCost = 0;
+
+      entries.forEach(e => {
+        const row = `<tr><td>${e.date}</td><td>${e.from}</td><td>${e.to}</td><td>${e.km}</td><td>${e.rate}</td><td>₹${e.cost.toFixed(2)}</td></tr>`;
+        tbody.innerHTML += row;
+        totalKM += e.km;
+        totalCost += e.cost;
+      });
+
+      document.getElementById("total-km").textContent = totalKM.toFixed(2);
+      document.getElementById("total-cost").textContent = totalCost.toFixed(2);
+    }
+
+    async function downloadPDF() {
+      const {{ jsPDF }} = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(12);
+      doc.text("Fuel Tracker Report", 14, 20);
+
+      let startY = 30;
+      doc.autoTable({
+        head: [["Date", "From", "To", "KM", "Rate", "Cost"]],
+        body: entries.map(e => [e.date, e.from, e.to, e.km, e.rate, `₹${e.cost.toFixed(2)}`]),
+        startY: startY,
+        theme: 'grid'
+      });
+
+      const totalKM = document.getElementById("total-km").textContent;
+      const totalCost = document.getElementById("total-cost").textContent;
+
+      doc.text(`Total KM: ${totalKM}`, 14, doc.lastAutoTable.finalY + 10);
+      doc.text(`Total Cost: ₹${totalCost}`, 14, doc.lastAutoTable.finalY + 20);
+      doc.save("Fuel_Tracker_Report.pdf");
+    }
+  </script>
+</body>
+</html>
